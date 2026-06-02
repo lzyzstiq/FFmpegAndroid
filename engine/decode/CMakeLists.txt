@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG ")
 
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(EXTRA_DIR "${ROOT_DIR}/../extra")
+set(EXTRA_DIR "${ROOT_DIR}/../../extra")
 set(COMMON_DIR "${ROOT_DIR}/../common")
 set(EXTRA_COMMON_DIR "${COMMON_DIR}")
 set(EXTRA_FFMPEG_ROOT "${EXTRA_DIR}/ffmpeg")

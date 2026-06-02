@@ -49,7 +49,7 @@ public:
 
     virtual int Decode(const AVPacket *pkt) = 0;
 
-    virtual void SetDecodeCallback(VideoDecodeCallback *callback) = 0;
+    void SetDecodeCallback(VideoDecodeCallback *callback);
 
     virtual int SetVideoFormat(const MetaData *metadata) = 0;
 
