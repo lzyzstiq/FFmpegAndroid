@@ -39,6 +39,8 @@ set(SRC_LIST
 
 add_library(demux SHARED ${SRC_LIST})
 
+target_link_options(demux PRIVATE "-Wl,-z,max-page-size=16384")
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     find_library(log-lib log)
     target_link_libraries(

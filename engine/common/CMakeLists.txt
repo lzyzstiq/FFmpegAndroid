@@ -27,6 +27,8 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 add_library(common SHARED ${SRC_LIST})
 
+target_link_options(common PRIVATE "-Wl,-z,max-page-size=16384")
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     find_library(log-lib log)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "OHOS")

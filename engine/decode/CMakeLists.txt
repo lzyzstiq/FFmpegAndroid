@@ -49,6 +49,8 @@ link_directories("${EXTRA_FFMPEG_DIR}")
 
 add_library(decode SHARED ${SRC_LIST})
 
+target_link_options(decode PRIVATE "-Wl,-z,max-page-size=16384")
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     target_link_libraries(
             decode
