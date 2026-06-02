@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class NextPlayer extends BasePlayer {
@@ -33,6 +34,7 @@ public class NextPlayer extends BasePlayer {
     private static final int gLogCallBackLevel = LogLevel.LOG_DEBUG.ordinal();
     private static NativeLogCallback mNativeLogListener;
 
+    private int mPlayerId; // call from native
     private int mVideoWidth;
     private int mVideoHeight;
     private int mVideoSarNum;
@@ -41,6 +43,7 @@ public class NextPlayer extends BasePlayer {
     private String mDataSource;
     private EventHandler mEventHandler;
     private SurfaceHolder mSurfaceHolder;
+    private static final AtomicInteger mAtomicInteger = new AtomicInteger(0);
 
     private static volatile boolean mNativeInitialized = false;
 
@@ -77,6 +80,7 @@ public class NextPlayer extends BasePlayer {
         } else {
             mEventHandler = null;
         }
+        mPlayerId = mAtomicInteger.addAndGet(1);
         native_setup(new WeakReference<>(this));
     }
 
