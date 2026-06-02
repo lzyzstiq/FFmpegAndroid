@@ -10,6 +10,9 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+set(EXTRA ../../../../extra)
+set(EXTRA_FFMPEG ${EXTRA}/ffmpeg)
+
 set(SRC_FFMPEG
         ffmpeg/cmdutils.c
         ffmpeg/ffmpeg.c
@@ -62,11 +65,9 @@ add_library( ffmpeg
              IMPORTED )
 set_target_properties( ffmpeg
                        PROPERTIES IMPORTED_LOCATION
-                       ../../../../libs/${CMAKE_ANDROID_ARCH_ABI}/libffmpeg.so )
+        ${CMAKE_SOURCE_DIR}/${EXTRA}/libs/${CMAKE_ANDROID_ARCH_ABI}/libffmpeg.so )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-
-set(EXTRA_FFMPEG ../../../../extra/ffmpeg)
 
 include_directories(.)
 include_directories(${EXTRA_FFMPEG}/include)
