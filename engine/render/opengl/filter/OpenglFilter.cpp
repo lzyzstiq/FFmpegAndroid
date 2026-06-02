@@ -40,7 +40,7 @@ int OpenGLFilter::init(VideoFrameMetaData *inputFrameMetaData,
     std::string error{};
     mGLContext = context;
     mInputFrameData = inputFrameMetaData;
-    mFixelFormat = inputFrameMetaData->pixel_format;
+    mPixelFormat = inputFrameMetaData->pixel_format;
     switch (mInputFrameData->pixel_format) {
         case PIXEL_FORMAT_RGB565:
         case PIXEL_FORMAT_RGB888:

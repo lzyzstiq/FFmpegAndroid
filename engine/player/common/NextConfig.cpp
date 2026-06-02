@@ -34,10 +34,10 @@ void NextPlayerConfig::reset() {
     mConfig->dcc.current_high_water_mark_in_ms = DEFAULT_FIRST_HIGH_WATER_MARK_IN_MS;
 }
 
-NextPlayerConfig *NextPlayerConfig::operator->() {
+PlayerConfig *NextPlayerConfig::operator->() {
     return mConfig;
 }
 
-NextPlayerConfig *NextPlayerConfig::get() {
+PlayerConfig *NextPlayerConfig::get() {
     return mConfig;
 }

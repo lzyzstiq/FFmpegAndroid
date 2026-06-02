@@ -283,7 +283,7 @@ EGLBoolean EglContext::SetSurfaceWithWindow() {
     if (mWidth && mHeight) {
         return EGL_TRUE;
     } else {
-        EGL_FALSE;
+        return EGL_FALSE;
     }
 }
 
