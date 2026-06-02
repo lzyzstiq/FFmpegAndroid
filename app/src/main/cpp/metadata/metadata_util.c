@@ -6,7 +6,7 @@
 
 #include "metadata_util.h"
 #include <stdio.h>
-#include "include/libavutil/pixdesc.h"
+#include "libavutil/pixdesc.h"
 
 void set_duration(AVFormatContext *ic) {
 	char value[20] = "0";
