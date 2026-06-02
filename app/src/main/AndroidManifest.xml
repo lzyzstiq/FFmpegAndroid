@@ -52,6 +52,7 @@
         <activity android:name=".activity.AudioPlayActivity" />
         <activity android:name=".activity.EqualizerActivity" />
         <activity android:name=".activity.CameraFilterActivity" />
+        <activity android:name=".activity.PlayerActivity" />
     </application>
 
 </manifest>
