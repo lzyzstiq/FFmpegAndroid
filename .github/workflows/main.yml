@@ -10,70 +10,73 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-    - name: Accept licenses and install tools
-      run: |
-        yes | sdkmanager --licenses
-        sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-        sdkmanager "ndk;27.0.12077973" "cmake;3.22.1"
+      - name: Accept licenses and install tools
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "ndk;27.0.12077973" "cmake;3.22.1"
 
-    - name: Build APK
-      run: |
-        chmod +x gradlew
-        ./gradlew assembleDebug
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    - name: Send APK via Email (Hardcoded)
-      env:
-        # ⚠️ 硬编码密码，极不安全！请务必使用后立即更改邮箱密码
-        EMAIL_PASS: '@15368291z'
-      run: |
-        APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
-        python -c "
-import smtplib
-import ssl
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
-from email import encoders
-import os, glob
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
-fromaddr = 'lzyzstiq@139.com'
-toaddr = 'lzyzstiq@139.com'
-password = os.environ['EMAIL_PASS']
+      - name: Send APK via Email (Hardcoded credentials)
+        env:
+          EMAIL_PASS: '@15368291z'   # ⚠️ 硬编码密码，用完请立即更改邮箱密码！
+        run: |
+          # 将 Python 脚本写入临时文件，避免转义问题
+          cat > send_email.py << 'EOF'
+          import smtplib
+          import ssl
+          from email.mime.multipart import MIMEMultipart
+          from email.mime.base import MIMEBase
+          from email.mime.text import MIMEText
+          from email import encoders
+          import os
+          import glob
 
-msg = MIMEMultipart()
-msg['From'] = fromaddr
-msg['To'] = toaddr
-msg['Subject'] = 'FFmpegAndroid APK Build'
+          fromaddr = "lzyzstiq@139.com"
+          toaddr = "lzyzstiq@139.com"
+          password = os.environ["EMAIL_PASS"]
 
-body = 'APK attached. Built from GitHub Actions.'
-msg.attach(MIMEText(body, 'plain'))
+          msg = MIMEMultipart()
+          msg["From"] = fromaddr
+          msg["To"] = toaddr
+          msg["Subject"] = "FFmpegAndroid APK Build"
 
-apk_files = glob.glob('app/build/outputs/apk/debug/*.apk')
-if not apk_files:
-    raise Exception('No APK found')
-filename = apk_files[0]
-with open(filename, 'rb') as attachment:
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(attachment.read())
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f'attachment; filename={os.path.basename(filename)}')
-    msg.attach(part)
+          body = "APK attached. Built from GitHub Actions."
+          msg.attach(MIMEText(body, "plain"))
 
-# 使用 SSL 连接 139 邮箱的 SMTP 服务器
-context = ssl.create_default_context()
-with smtplib.SMTP_SSL('smtp.139.com', 465, context=context) as server:
-    server.login(fromaddr, password)
-    server.sendmail(fromaddr, toaddr, msg.as_string())
-print('Email sent successfully')
-"
+          apk_files = glob.glob("app/build/outputs/apk/debug/*.apk")
+          if not apk_files:
+              raise Exception("No APK found")
+          filename = apk_files[0]
+          with open(filename, "rb") as attachment:
+              part = MIMEBase("application", "octet-stream")
+              part.set_payload(attachment.read())
+              encoders.encode_base64(part)
+              part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(filename)}")
+              msg.attach(part)
+
+          context = ssl.create_default_context()
+          with smtplib.SMTP_SSL("smtp.139.com", 465, context=context) as server:
+              server.login(fromaddr, password)
+              server.sendmail(fromaddr, toaddr, msg.as_string())
+          print("Email sent successfully")
+          EOF
+
+          python send_email.py
