@@ -34,11 +34,10 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Send APK via Email (Hardcoded credentials)
+      - name: Send APK via Email
         env:
-          EMAIL_PASS: '@15368291z'   # ⚠️ 硬编码密码，用完请立即更改邮箱密码！
+          EMAIL_PASS: '@15368291z'   # 注意：硬编码密码，用完立即修改
         run: |
-          # 将 Python 脚本写入临时文件，避免转义问题
           cat > send_email.py << 'EOF'
           import smtplib
           import ssl
@@ -46,8 +45,8 @@ jobs:
           from email.mime.base import MIMEBase
           from email.mime.text import MIMEText
           from email import encoders
-          import os
-          import glob
+          from email.utils import formatdate, make_msgid
+          import os, glob
 
           fromaddr = "lzyzstiq@139.com"
           toaddr = "lzyzstiq@139.com"
@@ -56,20 +55,25 @@ jobs:
           msg = MIMEMultipart()
           msg["From"] = fromaddr
           msg["To"] = toaddr
-          msg["Subject"] = "FFmpegAndroid APK Build"
+          msg["Subject"] = "APK Build from GitHub Actions"
+          msg["Date"] = formatdate(localtime=True)
+          msg["Message-ID"] = make_msgid(domain="github.com")
+          msg["Reply-To"] = fromaddr
+          msg["X-Mailer"] = "GitHubActions"
 
-          body = "APK attached. Built from GitHub Actions."
+          body = "Your APK file is attached. This is an automated build from GitHub Actions."
           msg.attach(MIMEText(body, "plain"))
 
           apk_files = glob.glob("app/build/outputs/apk/debug/*.apk")
           if not apk_files:
               raise Exception("No APK found")
           filename = apk_files[0]
+          basename = os.path.basename(filename)
           with open(filename, "rb") as attachment:
-              part = MIMEBase("application", "octet-stream")
+              part = MIMEBase("application", "vnd.android.package-archive")
               part.set_payload(attachment.read())
               encoders.encode_base64(part)
-              part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(filename)}")
+              part.add_header("Content-Disposition", f"attachment; filename={basename}")
               msg.attach(part)
 
           context = ssl.create_default_context()
@@ -78,5 +82,4 @@ jobs:
               server.sendmail(fromaddr, toaddr, msg.as_string())
           print("Email sent successfully")
           EOF
-
           python send_email.py
