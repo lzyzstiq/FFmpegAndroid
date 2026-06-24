@@ -1,13 +1,15 @@
-name: Build Android APK and Send Email
+name: Build and Release APK
 
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:
+  workflow_dispatch:   # 允许手动触发
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write    # 允许创建 Release 和上传附件
 
     steps:
       - name: Checkout code
@@ -34,66 +36,37 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Send APK via Email (hardcoded auth code)
+      - name: Get APK path and version
+        id: apk_info
         run: |
-          python3 << 'PYTHON_SCRIPT'
-          import smtplib
-          import ssl
-          from email.mime.multipart import MIMEMultipart
-          from email.mime.base import MIMEBase
-          from email.mime.text import MIMEText
-          from email import encoders
-          from email.utils import formatdate, make_msgid
-          import os, glob, time
+          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          # 生成基于时间的 Release 名称（如 v2026.06.24-1530）
+          TAG_NAME="v$(date +'%Y.%m.%d-%H%M')"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
-          # 硬编码授权码（139邮箱授权码）
-          AUTH_CODE = "6018467e0897385c8400"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.apk_info.outputs.tag_name }}
+          release_name: "APK Build ${{ steps.apk_info.outputs.tag_name }}"
+          body: |
+            ## Automated Debug APK Build
+            This APK was built automatically from the latest commit.
+            - Commit: ${{ github.sha }}
+            - Branch: ${{ github.ref_name }}
+          draft: false
+          prerelease: true   # 标记为预发布
 
-          def send_mail():
-              fromaddr = "lzyzstiq@139.com"
-              toaddr = "lzyzstiq@139.com"
-
-              msg = MIMEMultipart()
-              msg["From"] = fromaddr
-              msg["To"] = toaddr
-              msg["Subject"] = "APK Build from GitHub Actions"
-              msg["Date"] = formatdate(localtime=True)
-              msg["Message-ID"] = make_msgid(domain="github.com")
-              msg["Reply-To"] = fromaddr
-              msg["X-Mailer"] = "GitHubActions"
-
-              body = "Your APK file is attached. This is an automated build from GitHub Actions."
-              msg.attach(MIMEText(body, "plain"))
-
-              apk_files = glob.glob("app/build/outputs/apk/debug/*.apk")
-              if not apk_files:
-                  raise Exception("No APK found")
-              filename = apk_files[0]
-              basename = os.path.basename(filename)
-              with open(filename, "rb") as attachment:
-                  part = MIMEBase("application", "vnd.android.package-archive")
-                  part.set_payload(attachment.read())
-                  encoders.encode_base64(part)
-                  part.add_header("Content-Disposition", f"attachment; filename={basename}")
-                  msg.attach(part)
-
-              # 尝试通过 587 端口 STARTTLS 发送
-              context = ssl.create_default_context()
-              server = smtplib.SMTP("smtp.139.com", 587, timeout=60)
-              server.starttls(context=context)
-              server.login(fromaddr, AUTH_CODE)   # 使用授权码
-              server.sendmail(fromaddr, toaddr, msg.as_string())
-              server.quit()
-              print("Email sent successfully")
-
-          # 重试3次
-          for attempt in range(3):
-              try:
-                  send_mail()
-                  break
-              except Exception as e:
-                  print(f"Attempt {attempt+1} failed: {e}")
-                  time.sleep(10)
-                  if attempt == 2:
-                      raise
-          PYTHON_SCRIPT
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.apk_info.outputs.apk_path }}
+          asset_name: FFmpegAndroid-debug.apk
+          asset_content_type: application/vnd.android.package-archive
