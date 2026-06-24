@@ -34,11 +34,9 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Send APK via Email (with retry)
-        env:
-          EMAIL_PASS: '@15368291z'   # ⚠️ 硬编码密码，用完立即修改
+      - name: Send APK via Email (hardcoded auth code)
         run: |
-          cat > send_email.py << 'EOF'
+          python3 << 'PYTHON_SCRIPT'
           import smtplib
           import ssl
           from email.mime.multipart import MIMEMultipart
@@ -48,10 +46,12 @@ jobs:
           from email.utils import formatdate, make_msgid
           import os, glob, time
 
+          # 硬编码授权码（139邮箱授权码）
+          AUTH_CODE = "6018467e0897385c8400"
+
           def send_mail():
               fromaddr = "lzyzstiq@139.com"
               toaddr = "lzyzstiq@139.com"
-              password = os.environ["EMAIL_PASS"]
 
               msg = MIMEMultipart()
               msg["From"] = fromaddr
@@ -77,25 +77,23 @@ jobs:
                   part.add_header("Content-Disposition", f"attachment; filename={basename}")
                   msg.attach(part)
 
-              # 使用 587 端口和 STARTTLS
+              # 尝试通过 587 端口 STARTTLS 发送
               context = ssl.create_default_context()
-              server = smtplib.SMTP("smtp.139.com", 587, timeout=30)
+              server = smtplib.SMTP("smtp.139.com", 587, timeout=60)
               server.starttls(context=context)
-              server.login(fromaddr, password)
+              server.login(fromaddr, AUTH_CODE)   # 使用授权码
               server.sendmail(fromaddr, toaddr, msg.as_string())
               server.quit()
               print("Email sent successfully")
 
-          # 重试 3 次
+          # 重试3次
           for attempt in range(3):
               try:
                   send_mail()
                   break
               except Exception as e:
                   print(f"Attempt {attempt+1} failed: {e}")
-                  time.sleep(5)
+                  time.sleep(10)
                   if attempt == 2:
                       raise
-          EOF
-
-          python send_email.py
+          PYTHON_SCRIPT
